@@ -1,17 +1,21 @@
-<script>
+<script lang="ts">
+import type { Restaurant } from '@/types'
+import { computed, defineComponent, onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import NewRestaurantForm from '../components/NewRestaurantForm.vue'
 import RestaurantCard from '../components/RestaurantCard.vue'
 import SideMenu from '../components/SideMenu.vue'
 
-export default {
+export default defineComponent({
   components: {
     NewRestaurantForm,
     RestaurantCard,
     SideMenu,
   },
-  data: () => ({
-    filterText: '',
-    restaurantList: [
+  setup() {
+    const filterText = ref('')
+
+    const restaurantList = ref<Restaurant[]>([
       {
         id: '9f995ce4-d2fc-4d00-af1d-6cb1647c6bd3',
         name: 'Quiche From a Rose',
@@ -24,7 +28,7 @@ export default {
         name: 'Tamago Never Dies',
         address: '529 Letsgofora Dr.',
         website: 'www.tamagoneverdies.com',
-        status: 'Recommended',
+        status: 'Recommend',
       },
       {
         id: '9b361dae-2d44-4499-9940-97e188d41a32',
@@ -33,45 +37,60 @@ export default {
         website: 'www.penneforyourthoughts.com',
         status: 'Do Not Recommend',
       },
-    ],
-    showNewForm: false,
-  }),
-  computed: {
-    filteredRestaurantList() {
-      return this.restaurantList.filter((restaurant) => {
+    ])
+
+    const filteredRestaurantList = computed((): Restaurant[] => {
+      return restaurantList.value.filter((restaurant) => {
         if (restaurant.name) {
-          return restaurant.name.toLowerCase().includes(this.filterText.toLowerCase())
+          return restaurant.name.toLowerCase().includes(filterText.value.toLowerCase())
         } else {
-          return this.restaurantList
+          return restaurantList.value
         }
       })
-    },
-    numberOfRestaurants() {
-      return this.filteredRestaurantList.length
-    },
-  },
-  methods: {
-    addRestaurant(payload) {
-      this.restaurantList.push(payload)
-      this.hideForm()
-    },
-    deleteRestaurant(payload) {
-      this.restaurantList = this.restaurantList.filter((restaurant) => {
+    })
+
+    const numberOfRestaurants = computed((): number => {
+      return filteredRestaurantList.value.length
+    })
+
+    const addRestaurant = (payload: Restaurant) => {
+      restaurantList.value.push(payload)
+      hideForm()
+    }
+
+    const deleteRestaurant = (payload: Restaurant) => {
+      restaurantList.value = restaurantList.value.filter((restaurant) => {
         return restaurant.id !== payload.id
       })
-    },
-    hideForm() {
-      this.showNewForm = false
-    },
-  },
-  mounted() {
-    const route = this.$route
+    }
 
-    if (this.$route.query.new) {
-      showNewForm.value = true
+    /**
+     * Form Actions */
+    const showNewForm = ref(false)
+
+    const hideForm = () => {
+      showNewForm.value = false
+    }
+
+    onMounted(() => {
+      const route = useRoute()
+
+      if (route.query.new) {
+        showNewForm.value = true
+      }
+    })
+
+    return {
+      showNewForm,
+      hideForm,
+      deleteRestaurant,
+      addRestaurant,
+      numberOfRestaurants,
+      filteredRestaurantList,
+      filterText,
     }
   },
-}
+})
 </script>
 
 <template>

@@ -1,25 +1,49 @@
-<script>
+<script setup lang="ts">
 import { v4 as uuidv4 } from 'uuid'
+import { restaurantStatusList } from '@/constants'
+import type { Restaurant } from '@/types'
+import { onMounted, ref } from 'vue'
 
-export default {
-  emits: ['add-new-restaurant', 'cancel-new-restaurant'],
-  data: () => ({
-    newRestaurant: {
-      id: uuidv4(),
-      name: '',
-      address: '',
-      website: '',
-      status: 'Want to Try',
-    },
-  }),
+const newRestaurant = ref<Restaurant>({
+  id: uuidv4(),
+  name: '',
+  address: '',
+  website: '',
+  status: 'Want to Try',
+})
+
+const emits = defineEmits<{
+  (e: 'add-new-restaurant', restaurant: Restaurant): void
+  (e: 'cancel-new-restaurant'): void
+}>()
+
+const addNewRestaurant = (restaurant: Restaurant): void => {
+  emits('add-new-restaurant', restaurant)
 }
+const cancel = (): void => {
+  emits('cancel-new-restaurant')
+}
+
+const elNameInput = ref<HTMLInputElement | null>(null)
+
+// assign the input value when the user hits Space
+const updateName = (event: KeyboardEvent) => {
+  if (event.code === 'Space') {
+    newRestaurant.value.name = (event.target as HTMLInputElement).value
+  }
+}
+
+onMounted(() => {
+  // autoselect the first input field on the form
+  elNameInput.value?.focus()
+})
 </script>
 
 <template>
   <form @submit.prevent>
     <div class="field">
       <div class="field">
-        <label for="name" class="label">Name</label>
+        <label for="name" class="label">Name: {{ newRestaurant.name }}</label>
         <div class="control">
           <input
             :value="newRestaurant.name"
@@ -50,8 +74,8 @@ export default {
       </div>
       <div class="field">
         <div class="buttons">
-          <button @click="$emit('add-new-restaurant', newRestaurant)" class="button is-success">Create</button>
-          <button @click="$emit('cancel-new-restaurant')" class="button is-light">Cancel</button>
+          <button @click="addNewRestaurant(newRestaurant)" class="button is-success">Create</button>
+          <button @click="cancel" class="button is-light">Cancel</button>
         </div>
       </div>
     </div>

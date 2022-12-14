@@ -1,69 +1,62 @@
-<script>
-import NewDishForm from '../components/NewDishForm.vue'
+<script setup lang="ts">
+import DishForm from '../components/DishForm.vue'
 import DishCard from '../components/DishCard.vue'
 import SideMenu from '../components/SideMenu.vue'
+import { ref, defineComponent, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import type { Dish } from '@/types'
+import { useDishStore } from '@/store/DishStore'
 
-export default {
-  components: {
-    NewDishForm,
-    DishCard,
-    SideMenu,
-  },
-  data: () => ({
-    filterText: '',
-    dishList: [
-      {
-        id: '7d9f3f17-964a-4e82-98e5-ecbba4d709a1',
-        name: 'Ghost Pepper Poppers',
-        status: 'Want to Try',
-      },
-      {
-        id: '5c986b74-fa02-4a22-98f2-b1ff3559e85e',
-        name: 'A Little More Chowder Now',
-        status: 'Recommended',
-      },
-      {
-        id: 'c113411d-1589-414f-a283-daf7eedb631e',
-        name: 'Full Laptop Battery',
-        status: 'Do Not Recommend',
-      },
-    ],
-    showNewForm: false,
-  }),
-  computed: {
-    filteredDishList() {
-      return this.dishList.filter((dish) => {
-        if (dish.name) {
-          return dish.name.toLowerCase().includes(this.filterText.toLowerCase())
-        } else {
-          return this.dishList
-        }
-      })
-    },
-    numberOfDishes() {
-      return this.filteredDishList.length
-    },
-  },
-  methods: {
-    addDish(payload) {
-      this.dishList.push(payload)
-      this.hideForm()
-    },
-    deleteDish(payload) {
-      this.dishList = this.dishList.filter((dish) => {
-        return dish.id !== payload.id
-      })
-    },
-    hideForm() {
-      this.showNewForm = false
-    },
-  },
-  mounted() {
-    const route = this.$route
-    if (route.query.new) {
-      this.showNewForm = true
+const filterText = ref('')
+const dishStore = useDishStore()
+
+const showNewForm = ref(false)
+const dishToEdit = ref<Dish | null>(null)
+
+const filteredDishList = computed((): Dish[] => {
+  return dishStore.list.filter((dish) => {
+    if (dish.name) {
+      return dish.name.toLowerCase().includes(filterText.value.toLowerCase())
+    } else {
+      return dishStore.list
     }
-  },
+  })
+})
+
+const numberOfDishes = computed((): number => {
+  return filteredDishList.value.length
+})
+
+const addDish = (payload: Dish) => {
+  dishStore.addDish(payload)
+  hideForm()
+}
+
+const editDish = (payload: Dish) => {
+  dishStore.editDish(payload)
+  dishToEdit.value = null
+  hideForm()
+}
+
+const redirectToEditMode = (payload: Dish) => {
+  dishToEdit.value = payload
+  showNewForm.value = true
+}
+
+const hideForm = () => {
+  showNewForm.value = false
+}
+
+onMounted(() => {
+  const route = useRoute()
+
+  if (route.query.new) {
+    showNewForm.value = true
+  }
+})
+
+const updateFilterText = (event: KeyboardEvent) => {
+  filterText.value = (event.target as HTMLInputElement).value
 }
 </script>
 
@@ -93,7 +86,14 @@ export default {
             <div class="level-item is-hidden-tablet-only">
               <div class="field has-addons">
                 <p class="control">
-                  <input class="input" type="text" placeholder="Dish name" v-model="filterText" />
+                  <input
+                    class="input"
+                    type="text"
+                    placeholder="Dish name"
+                    :value="filterText"
+                    @keyup.enter="updateFilterText"
+                    @keyup.backspace="filterText = ''"
+                  />
                 </p>
                 <p class="control">
                   <button class="button">Search</button>
@@ -104,12 +104,18 @@ export default {
         </nav>
 
         <!-- New Dish Form -->
-        <NewDishForm v-if="showNewForm" @add-new-dish="addDish" @cancel-new-dish="hideForm" />
+        <DishForm
+          v-if="showNewForm"
+          @add-new-dish="addDish"
+          :dish="dishToEdit"
+          @edit-dish="editDish"
+          @cancel-new-dish="hideForm"
+        />
 
         <!-- Display Results -->
         <div v-else class="columns is-multiline">
           <div v-for="item in filteredDishList" class="column is-full" :key="`item-${item}`">
-            <DishCard :dish="item" @delete-dish="deleteDish" />
+            <DishCard :dish="item" @edit-dish="redirectToEditMode" @delete-dish="dishStore.deleteDish" />
           </div>
         </div>
       </div>

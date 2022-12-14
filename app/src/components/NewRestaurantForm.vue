@@ -43,7 +43,7 @@ onMounted(() => {
   <form @submit.prevent>
     <div class="field">
       <div class="field">
-        <label for="name" class="label">Name</label>
+        <label for="name" class="label">Name: {{ newRestaurant.name }}</label>
         <div class="control">
           <input
             :value="newRestaurant.name"

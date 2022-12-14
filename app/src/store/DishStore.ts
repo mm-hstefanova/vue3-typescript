@@ -29,6 +29,9 @@ export const useDishStore = defineStore('DishStore', {
     addDish(payload: Dish) {
       this.list.push(payload)
     },
+    editDish(payload: Dish) {
+      this.list = this.list.map((listDish) => (listDish.id === payload.id ? payload : listDish))
+    },
     deleteDish(payload: Dish) {
       this.list = this.list.filter((dish) => dish.id !== payload.id)
     },

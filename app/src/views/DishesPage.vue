@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import NewDishForm from '../components/NewDishForm.vue'
+import DishForm from '../components/DishForm.vue'
 import DishCard from '../components/DishCard.vue'
 import SideMenu from '../components/SideMenu.vue'
 import { ref, defineComponent, computed, onMounted } from 'vue'
@@ -11,6 +11,7 @@ const filterText = ref('')
 const dishStore = useDishStore()
 
 const showNewForm = ref(false)
+const dishToEdit = ref<Dish | null>(null)
 
 const filteredDishList = computed((): Dish[] => {
   return dishStore.list.filter((dish) => {
@@ -29,6 +30,17 @@ const numberOfDishes = computed((): number => {
 const addDish = (payload: Dish) => {
   dishStore.addDish(payload)
   hideForm()
+}
+
+const editDish = (payload: Dish) => {
+  dishStore.editDish(payload)
+  dishToEdit.value = null
+  hideForm()
+}
+
+const redirectToEditMode = (payload: Dish) => {
+  dishToEdit.value = payload
+  showNewForm.value = true
 }
 
 const hideForm = () => {
@@ -92,12 +104,18 @@ const updateFilterText = (event: KeyboardEvent) => {
         </nav>
 
         <!-- New Dish Form -->
-        <NewDishForm v-if="showNewForm" @add-new-dish="addDish" @cancel-new-dish="hideForm" />
+        <DishForm
+          v-if="showNewForm"
+          @add-new-dish="addDish"
+          :dish="dishToEdit"
+          @edit-dish="editDish"
+          @cancel-new-dish="hideForm"
+        />
 
         <!-- Display Results -->
         <div v-else class="columns is-multiline">
           <div v-for="item in filteredDishList" class="column is-full" :key="`item-${item}`">
-            <DishCard :dish="item" @delete-dish="dishStore.deleteDish" />
+            <DishCard :dish="item" @edit-dish="redirectToEditMode" @delete-dish="dishStore.deleteDish" />
           </div>
         </div>
       </div>
